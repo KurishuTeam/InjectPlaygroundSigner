@@ -1,5 +1,10 @@
 # InjectPlaygroundSigner
 
+> [!WARNING]
+> WIP
+> 
+> this project is WIP so expect that it will blow up ur mac until stability is confirmed
+
 just swizzles a swift playground function, signs all binaries at `~/Library/Containers/com.apple.PlaygroundsMac/Data/Documents/SignAll/`
 
 **confirmed**:
@@ -7,5 +12,5 @@ just swizzles a swift playground function, signs all binaries at `~/Library/Cont
 
 **will test**:
 - signed binaries support ipad playgrounds or not
-- linkerSettings to link actaul libraries
+- linkerSettings to link actual libraries
 
