@@ -3,7 +3,7 @@
 //  InjectPlaygroundSigner
 //
 //  Created by IntelRyzen on 11/8/26
-//  Copyright © 2026 IntelRyzen.
+//  Copyright © 2026 KurishuTeam.
 //
 //
 
