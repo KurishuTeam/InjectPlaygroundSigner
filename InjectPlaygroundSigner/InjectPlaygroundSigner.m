@@ -29,7 +29,7 @@
     NSLog(@"[InjectPlaygroundSigner] Entered swizzled signFileAtURL!");
     NSLog(@"[InjectPlaygroundSigner] Original URL: %@", url);
     
-    NSString *signAllDirectory = [NSHomeDirectory() stringByAppendingPathComponent:@"Library/Containers/com.apple.PlaygroundsMac/Data/Documents/SignAll"];
+    NSString *signAllDirectory = [NSHomeDirectory() stringByAppendingPathComponent:@"Documents/SignAll"];
 
     NSURL *folderURL = [NSURL fileURLWithPath:
         signAllDirectory];
