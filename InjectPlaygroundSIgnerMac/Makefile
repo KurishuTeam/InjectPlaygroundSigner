@@ -18,4 +18,6 @@ InjectPlaygroundSignerMac_ARCH_SWIFTFLAGS_x86_64 = -target x86_64-apple-ios14.0-
 InjectPlaygroundSignerMac_ARCH_LDFLAGS_arm64 = -target arm64-apple-ios14.0-macabi
 InjectPlaygroundSignerMac_ARCH_LDFLAGS_x86_64 = -target x86_64-apple-ios14.0-macabi
 
+InjectPlaygroundSignerMac_CFLAGS = -fobjc-arc -fno-modules
+
 include $(THEOS_MAKE_PATH)/library.mk
