@@ -1,0 +1,8 @@
+Package: com.kurishu.injectplaygroundsigneripad
+Name: InjectPlaygroundSigneriPad
+Version: 0.1.0
+Architecture: iphoneos-arm
+Description: Sign Binaries using Swift Playground!
+Maintainer: IntelRyzen <144450428+IntelRyzenYT@users.noreply.github.com>
+Author: IntelRyzen
+Section: Tweaks
