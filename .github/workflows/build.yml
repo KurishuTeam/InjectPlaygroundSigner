@@ -9,11 +9,16 @@ on:
 
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: macos-15
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '16'
 
       - name: Install gmake
         run: |
@@ -21,8 +26,7 @@ jobs:
 
       - name: Setup Theos
         run: |
-          git clone --recursive https://github.com/theos/theos.git ${{ github.workspace }}/theos
-          
+          git clone --recursive https://github.com ${{ github.workspace }}/theos
           echo "THEOS=${{ github.workspace }}/theos" >> $GITHUB_ENV
 
       - name: Clean and Build Package
@@ -40,7 +44,7 @@ jobs:
         run: |
           cp .theos/obj/macosx/InjectPlaygroundSignerMac.dylib ./InjectPlaygroundSignerMac.dylib
 
-      - name:
+      - name: Upload macOS Dylib
         uses: actions/upload-artifact@v4
         with:
           name: InjectPlaygroundSignerMac-dylib
