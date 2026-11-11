@@ -26,7 +26,7 @@ jobs:
 
       - name: Setup Theos
         run: |
-          git clone --recursive https://github.com ${{ github.workspace }}/theos
+          git clone --recursive https://github.com/theos/theos ${{ github.workspace }}/theos
           echo "THEOS=${{ github.workspace }}/theos" >> $GITHUB_ENV
 
       - name: Clean and Build Package
