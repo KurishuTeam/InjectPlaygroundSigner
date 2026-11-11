@@ -3,28 +3,70 @@
 #import "PlaygroundCodeSigning.h"
 #import <mach-o/dyld.h>
 #import <objc/runtime.h>
+#import <dlfcn.h>
 
 %config(generator=internal)
 
-%group InjectPlaygroundSignerHooks
+#import <stdio.h>
 
-%hook PGSCodeSigner
+#define ERROR(fmt, ...) do { \
+    fprintf(stderr, "[InjectPlaygroundSigner] " fmt "\n", ##__VA_ARGS__); \
+    fflush(stderr); \
+} while (0)
 
-+ (id)signFileAtURL:(NSURL *)url
-                 withIdentity:(SecIdentityRef)identity
-                   identifier:(NSString *)identifier
-                       teamID:(NSString *)teamID
-                 entitlements:(NSDictionary<NSString *, id> * _Nullable)entitlements
-           codeSignatureFlags:(uint32_t)codeSignatureFlags
-           metadataToPreserve:(uint32_t)metadataToPreserve
-                signatureSize:(NSInteger)signatureSize
-                omitAdHocFlag:(BOOL)omitAdHocFlag
-    preserveExistingSignature:(BOOL)preserveExistingSignature
-      generateEntitlementsDER:(BOOL)generateEntitlementsDER
-                      SDKRoot:(NSURL * _Nullable)sdkRoot
-                        error:(NSError * _Nullable * _Nullable)error {
+#define FATAL(fmt, ...) do { \
+    ERROR(fmt, ##__VA_ARGS__); \
+    exit(1); \
+} while (0)
 
-    NSString *signAllDirectory =
+#define ERROR_NS(fmt, ...) do { \
+    NSString *__msg = [NSString stringWithFormat:fmt, ##__VA_ARGS__]; \
+    fprintf(stderr, "[InjectPlaygroundSigner] %s\n", [__msg UTF8String]); \
+    fflush(stderr); \
+} while (0)
+
+#define FATAL_NS(fmt, ...) do { \
+    ERROR_NS(fmt, ##__VA_ARGS__); \
+    exit(1); \
+} while (0)
+
+typedef SecIdentityRef (*swiftPlaygroundsSigningIdentityFunc_t)(
+    void * __attribute__((swift_context)) context,
+    void * __attribute__((swift_error_result)) *error
+) __attribute__((swiftcall));
+
+static SecIdentityRef getIdentity() {
+    void *sym = dlsym(RTLD_DEFAULT, "$s21PlaygroundCodeSigning18CertificateManagerO016swiftPlaygroundsC8IdentitySo03SecH3RefayKFZ");
+    
+    if (!sym) {
+        char *error = dlerror();
+        
+        if (error) {
+            FATAL("Error getting symbol. dlerror() returned: %s", error);
+        } else {
+            FATAL("Error getting symbol. Unknown error.");
+        }
+    }
+    
+    swiftPlaygroundsSigningIdentityFunc_t swiftPlaygroundsSigningIdentity = (swiftPlaygroundsSigningIdentityFunc_t)sym;
+    void *swiftError = NULL;
+    
+    SecIdentityRef identity = swiftPlaygroundsSigningIdentity(NULL, &swiftError);
+    
+    if (swiftError == NULL && identity != NULL) {
+        return identity;
+    } else if (swiftError != NULL) {
+        NSError *err = CFBridgingRelease(swiftError);
+        FATAL_NS(@"[InjectPlaygroundSigner] Error: %@", err);
+    } else {
+        FATAL("[InjectPlaygroundSigner] Identity and swift error were nonnull.");
+    }
+}
+
+static void signFiles() {
+    Class signerClass = %c(PGSCodeSigner);
+    
+     NSString *signAllDirectory =
         [NSHomeDirectory() stringByAppendingPathComponent:@"Documents/SignAll"];
     NSURL *folderURL = [NSURL fileURLWithPath:signAllDirectory];
 
@@ -37,28 +79,41 @@
     for (NSURL *swizzleURL in directoryContents) {
         NSLog(@"[InjectPlaygroundSigner] Got Swizzled URL: %@", swizzleURL);
         
-        %orig(swizzleURL, identity, identifier, teamID, entitlements,
-              codeSignatureFlags, metadataToPreserve, signatureSize,
-              omitAdHocFlag, preserveExistingSignature,
-              generateEntitlementsDER, sdkRoot, nil);
+        NSError *signError = NULL;
+        
+        SecIdentityRef identity = getIdentity();
+        
+        if (!identity) {
+            FATAL("[InjectPlaygroundSigner] Failed");
+        }
+        
+        id result = [signerClass signFileAtURL:swizzleURL
+                     withIdentity:identity
+                     identifier:nil
+                     teamID:@"LOCALSPKEY"
+                     entitlements:nil
+                     codeSignatureFlags:0
+                     metadataToPreserve:277
+                     signatureSize:0
+                     omitAdHocFlag:NO
+                     preserveExistingSignature:NO
+                     generateEntitlementsDER:YES
+                     SDKRoot:nil
+                     error:&signError];
+              
+        NSLog(@"[InjectPlaygroundSigner] Result: %@", result);
+        NSLog(@"[InjectPlaygroundSigner] Error: %@", signError);
     }
     
-    return %orig(url, identity, identifier, teamID, entitlements,
-                 codeSignatureFlags, metadataToPreserve, signatureSize,
-                 omitAdHocFlag, preserveExistingSignature,
-                 generateEntitlementsDER, sdkRoot, error);
+    exit(0);
 }
-
-%end
-
-%end
 
 static void image_added_callback(const struct mach_header *mh, intptr_t vmaddr_slide) {
     if (objc_getClass("PGSCodeSigner") != nil) {
         static dispatch_once_t onceToken;
         dispatch_once(&onceToken, ^{
-            NSLog(@"[InjectPlaygroundSigner] PGSCodeSigner class found, initializing hooks.");
-            %init(InjectPlaygroundSignerHooks);
+            NSLog(@"[InjectPlaygroundSigner] Signing files...");
+            signFiles();
         });
     }
 }

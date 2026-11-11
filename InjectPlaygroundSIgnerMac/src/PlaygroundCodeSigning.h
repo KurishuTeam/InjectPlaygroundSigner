@@ -9,7 +9,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 + (id)signFileAtURL:(NSURL *)url
       withIdentity:(SecIdentityRef)identity
-      identifier:(NSString *)identifier
+      identifier:(NSString * _Nullable)identifier
             teamID:(NSString *)teamID
       entitlements:(NSDictionary<NSString *, id> * _Nullable)entitlements
 codeSignatureFlags:(uint32_t)codeSignatureFlags
